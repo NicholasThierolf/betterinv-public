@@ -17,7 +17,7 @@ copyDir(distSrc, distDst);
 
 // 3) install runtime deps into runtime/node_modules
 //    Use npm for determinism (works even if monorepo uses pnpm elsewhere)
-execSync("npm install --omit=dev --no-fund --no-audit", {
+execSync("npm ci --omit=dev --no-fund --no-audit", {
     cwd: runtime,
     stdio: "inherit"
 });
