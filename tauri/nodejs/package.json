@@ -28,9 +28,6 @@
     "archiver": "^7.0.1",
     "vite": "^7.3.0"
   },
-  "overrides": {
-    "html-encoding-sniffer": "4.0.0"
-  },
   "pkg": {
     "assets": [
       "node_modules/@doctormckay/steam-crypto/system.pem"
