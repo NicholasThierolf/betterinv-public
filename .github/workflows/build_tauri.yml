@@ -71,10 +71,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f package-lock.runtime.json
-          # Create a standalone lockfile for this package only.
-          # --workspaces=false ensures npm treats this folder as standalone.
-          npm install --package-lock-only --omit=dev --no-fund --no-audit --workspaces=false
           mv package-lock.json package-lock.runtime.json
 
       # ✅ Build internal workspace packages so their dist entrypoints exist on CI
