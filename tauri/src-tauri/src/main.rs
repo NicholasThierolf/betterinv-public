@@ -49,7 +49,9 @@ fn send_to_sidecar(state: State<'_, SidecarConnection>, message: String) -> Resu
         // If node already exited, writing will fail (e.g. Windows os error 232).
         if let Err(e) = child.write(data.as_bytes()) {
             *child_guard = None;
-            return Err(format!("Backend is not running anymore (stdin write failed): {e}"));
+            return Err(format!(
+                "Backend is not running anymore (stdin write failed): {e}"
+            ));
         }
 
         Ok(())
@@ -168,6 +170,7 @@ fn ensure_backend_runtime(
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             println!("a new app instance was opened with {argv:?} and the deep link event was already triggered");
