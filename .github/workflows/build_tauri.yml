@@ -9,13 +9,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ✅ New: detect whether we should build/release (version increased)
   check_version:
     if: ${{ github.repository == 'NicholasThierolf/betterinv-public' }}
     runs-on: ubuntu-22.04
     permissions:
       contents: read
-    outputsj
     outputs:
       should_release: ${{ steps.out.outputs.should_release }}
       version: ${{ steps.out.outputs.version }}
@@ -30,7 +28,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Read version from tauri config (covers both common shapes)
           VERSION="$(jq -r '.version // .package.version' tauri/src-tauri/tauri.conf.json)"
           if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
             echo "Could not read version from tauri/src-tauri/tauri.conf.json"
@@ -39,7 +36,6 @@ jobs:
 
           TAG="app-v$VERSION"
 
-          # Fetch latest release tag (may 404 if none exists)
           LATEST_TAG="$(curl -fsSL \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
@@ -54,11 +50,9 @@ jobs:
             exit 0
           fi
 
-          # Strip common prefixes
           LATEST_VER="${LATEST_TAG#app-v}"
           LATEST_VER="${LATEST_VER#v}"
 
-          # Only release if VERSION > LATEST_VER (semver-ish using sort -V)
           TOP="$(printf '%s\n' "$LATEST_VER" "$VERSION" | sort -V | tail -n 1)"
           if [ "$TOP" = "$VERSION" ] && [ "$VERSION" != "$LATEST_VER" ]; then
             echo "Version increased ($LATEST_VER -> $VERSION) -> will release $TAG"
@@ -94,8 +88,6 @@ jobs:
             nodeDist: node-v22.21.1-linux-x64.tar.xz
 
     runs-on: ${{ matrix.os }}
-
-    # ✅ Needed for creating/updating releases + uploading assets
     permissions:
       contents: write
 
@@ -195,21 +187,16 @@ jobs:
           $dest = Join-Path $destDir "node-${{ matrix.targetTriple }}.exe"
           Copy-Item $nodeExe.FullName $dest -Force
 
-      # ✅ IMPORTANT: build via tauri-action, create release, upload assets + latest.json for updater
       - name: Build + Release Tauri app
-        uses: tauri-apps/tauri-action@v1
+        uses: tauri-apps/tauri-action@v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PUBLIC_SERVER_URL: ${{ env.PUBLIC_SERVER_URL }}
-
-          # ✅ Required for updater signing (you will add these secrets)
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: tauri
           args: ${{ matrix.tauriArgs }}
-
-          # ✅ Make releases predictable + match the updater endpoint pattern
           tagName: app-v__VERSION__
           releaseName: BetterInv v__VERSION__
           releaseBody: "Auto-published release for BetterInv v__VERSION__"
@@ -217,11 +204,6 @@ jobs:
           prerelease: false
           generateReleaseNotes: true
 
-          # ✅ Ensure updater JSON exists & prefers NSIS on Windows
-          uploadUpdaterJson: true
-          updaterJsonPreferNsis: true
-
-      # Optional: keep your workflow artifacts too (handy for debugging)
       - name: Upload bundles (workflow artifacts)
         uses: actions/upload-artifact@v4
         with:
