@@ -1,0 +1,144 @@
+name: build-tauri
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+            - 'app/**'
+            - 'server/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            tauriArgs: --target aarch64-apple-darwin
+            targetTriple: aarch64-apple-darwin
+            nodeDist: node-v20.11.1-darwin-arm64.tar.gz
+
+          - os: windows-latest
+            tauriArgs: ""
+            targetTriple: x86_64-pc-windows-msvc
+            nodeDist: node-v20.11.1-win-x64.zip
+
+          - os: ubuntu-22.04
+            tauriArgs: ""
+            targetTriple: x86_64-unknown-linux-gnu
+            nodeDist: node-v20.11.1-linux-x64.tar.xz
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      PUBLIC_SERVER_URL: ${{ vars.PUBLIC_SERVER_URL }}
+      CI: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node (monorepo tooling)
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-14' && 'aarch64-apple-darwin' || '' }}
+
+      - name: Install Linux dependencies (Ubuntu only)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential
+
+      # Install deps at repo root
+      - name: Install root dependencies
+        run: npm ci
+
+      # ✅ Build internal workspace packages so their dist entrypoints exist on CI
+      - name: Build workspace @betterinv/types
+        run: npm run build -w @betterinv/types
+        env:
+          PUBLIC_SERVER_URL: ${{ env.PUBLIC_SERVER_URL }}
+
+      - name: Build workspace @betterinv/lib
+        run: npm run build -w @betterinv/lib
+        env:
+          PUBLIC_SERVER_URL: ${{ env.PUBLIC_SERVER_URL }}
+
+      # Build the nodejs sidecar bundle/zip/etc
+      - name: Build sidecar (tauri/nodejs)
+        working-directory: tauri/nodejs
+        run: npm run all
+        env:
+          PUBLIC_SERVER_URL: ${{ env.PUBLIC_SERVER_URL }}
+
+      # Download & place Node runtime for sidecar (externalBin)
+      - name: Download Node runtime (macOS)
+        if: matrix.os == 'macos-14'
+        run: |
+          set -euo pipefail
+          cd /tmp
+          curl -fsSL -O "https://nodejs.org/dist/v20.11.1/${{ matrix.nodeDist }}"
+          tar -xzf "${{ matrix.nodeDist }}"
+          mkdir -p "${GITHUB_WORKSPACE}/tauri/src-tauri/binaries"
+          cp "node-v20.11.1-darwin-arm64/bin/node" \
+            "${GITHUB_WORKSPACE}/tauri/src-tauri/binaries/node-${{ matrix.targetTriple }}"
+          chmod +x "${GITHUB_WORKSPACE}/tauri/src-tauri/binaries/node-${{ matrix.targetTriple }}"
+
+      - name: Download Node runtime (Linux)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          set -euo pipefail
+          cd /tmp
+          curl -fsSL -O "https://nodejs.org/dist/v20.11.1/${{ matrix.nodeDist }}"
+          tar -xJf "${{ matrix.nodeDist }}"
+          mkdir -p "${GITHUB_WORKSPACE}/tauri/src-tauri/binaries"
+          cp "node-v20.11.1-linux-x64/bin/node" \
+            "${GITHUB_WORKSPACE}/tauri/src-tauri/binaries/node-${{ matrix.targetTriple }}"
+          chmod +x "${GITHUB_WORKSPACE}/tauri/src-tauri/binaries/node-${{ matrix.targetTriple }}"
+
+      - name: Download Node runtime (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tmp = "$env:RUNNER_TEMP\node"
+          New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+          $url = "https://nodejs.org/dist/v20.11.1/${{ matrix.nodeDist }}"
+          $zip = Join-Path $tmp "${{ matrix.nodeDist }}"
+          Invoke-WebRequest -Uri $url -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $tmp -Force
+          $nodeExe = Get-ChildItem -Path $tmp -Recurse -Filter "node.exe" | Select-Object -First 1
+          if (-not $nodeExe) { throw "node.exe not found after extracting Node zip" }
+          $destDir = Join-Path $env:GITHUB_WORKSPACE "tauri\src-tauri\binaries"
+          New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+          $dest = Join-Path $destDir "node-${{ matrix.targetTriple }}.exe"
+          Copy-Item $nodeExe.FullName $dest -Force
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLIC_SERVER_URL: ${{ env.PUBLIC_SERVER_URL }}
+        with:
+          projectPath: tauri
+          args: ${{ matrix.tauriArgs }}
+
+      - name: Upload bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles-${{ matrix.os }}-${{ matrix.targetTriple }}
+          path: |
+            tauri/src-tauri/target/release/bundle/**
+            tauri/src-tauri/target/${{ matrix.targetTriple }}/release/bundle/**
+          if-no-files-found: warn

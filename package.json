@@ -1,0 +1,11 @@
+{
+    "name": "my-monorepo",
+    "private": true,
+    "workspaces": [
+        "types",
+        "lib",
+        "server",
+        "tauri/nodejs",
+        "tauri"
+    ]
+}

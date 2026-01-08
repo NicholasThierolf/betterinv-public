@@ -1,0 +1,14 @@
+{
+    "name": "betterinv-backend-runtime",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+        "globaloffensive": "^3.2.0",
+        "jwt-decode": "^4.0.0",
+        "keytar": "^7.9.0",
+        "node-html-parser": "^7.0.1",
+        "qrcode": "^1.5.4",
+        "set-cookie-parser": "^2.7.2",
+        "jsdom": "^27.4.0"
+    }
+}

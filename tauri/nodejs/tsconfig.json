@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "allowImportingTsExtensions": true,
+        "paths": {
+            "@betterinv/types": [
+                "../../types/src/index.ts"
+            ],
+            "@betterinv/lib": [
+                "../../lib/src/index.ts"
+            ],
+            "@betterinv/lib/*": [
+                "../../lib/src/*"
+            ]
+        }
+    }
+}

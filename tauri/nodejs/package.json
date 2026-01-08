@@ -1,0 +1,36 @@
+{
+  "name": "@betterinv/tauri-nodejs",
+  "version": "0.0.1",
+  "description": "runs the desktop apps local backend",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build:backend": "vite build -c vite.config.ts",
+    "prepare:runtime": "node scripts/prepare-runtime.cjs",
+    "zip:backend": "node scripts/make-backend-zip.cjs",
+    "all": "npm run build:backend && npm run prepare:runtime && npm run zip:backend"
+  },
+  "author": "Nicholas Thierolf",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@betterinv/types": "*",
+    "globaloffensive": "^3.2.0",
+    "jwt-decode": "^4.0.0",
+    "keytar": "^7.9.0",
+    "node-html-parser": "^7.0.1",
+    "qrcode": "^1.5.4",
+    "set-cookie-parser": "^2.7.2",
+    "jsdom": "^27.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@yao-pkg/pkg": "^6.11.0",
+    "archiver": "^7.0.1",
+    "vite": "^7.3.0"
+  },
+  "pkg": {
+    "assets": [
+      "node_modules/@doctormckay/steam-crypto/system.pem"
+    ]
+  }
+}
