@@ -13,7 +13,7 @@
   "author": "Nicholas Thierolf",
   "license": "UNLICENSED",
   "dependencies": {
-    "@betterinv/types": "*",
+    "@betterinv/types": "file:../../types",
     "globaloffensive": "^3.2.0",
     "jwt-decode": "^4.0.0",
     "keytar": "^7.9.0",
