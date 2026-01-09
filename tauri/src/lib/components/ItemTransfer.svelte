@@ -129,38 +129,39 @@
                     </div>
                 {/if}
                 {#if dialogState === DialogStates.SelectingContainer}
-                    Trying to move {itemInDialog?.marketHashName} into a container
-                    :)
-                    <div
-                        class="w-full h-[50vh] flex flex-wrap overflow-auto gap-2"
-                    >
-                        {#if inventoryManager.data?.[steamID]?.loaded}
-                            {#each containers as container (container.ids[0])}
-                                <ContainerSelectItem
-                                    item={container}
-                                    onclick={() => {
-                                        selectContainer(container);
-                                    }}
-                                />
-                            {/each}
-                        {/if}
-                    </div>
-                {/if}
-                {#if dialogState === DialogStates.SettingAmount}
-                    <Input
-                        bind:value={amountToMove}
-                        type="number"
-                        min="1"
-                        max={maxAmount}
-                    />
-                    <Button
-                        onclick={() => {
-                            if (moveOut) moveOutOfContainer();
-                            else moveIntoContainer();
-                        }}>Send to container</Button
-                    >
+                    Choose a container to move your {itemInDialog?.marketHashName}
+                    into
                 {/if}
             </Dialog.Description>
         </Dialog.Header>
+        {#if dialogState === DialogStates.SelectingContainer}
+            <div class="w-full h-[50vh] flex flex-wrap overflow-auto gap-2">
+                {#if inventoryManager.data?.[steamID]?.loaded}
+                    {#each containers as container (container.ids[0])}
+                        <ContainerSelectItem
+                            item={container}
+                            onclick={() => {
+                                selectContainer(container);
+                            }}
+                        />
+                    {/each}
+                {/if}
+            </div>
+        {/if}
+        {#if dialogState === DialogStates.SettingAmount}
+            <Input
+                bind:value={amountToMove}
+                type="number"
+                min="1"
+                max={maxAmount}
+            />
+            {#if moveOut}
+                <Button onclick={moveOutOfContainer}
+                    >Remove from container</Button
+                >
+            {:else}
+                <Button onclick={moveIntoContainer}>Send to container</Button>
+            {/if}
+        {/if}
     </Dialog.Content>
 </Dialog.Root>
