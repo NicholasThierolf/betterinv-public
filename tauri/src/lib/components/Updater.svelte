@@ -34,20 +34,20 @@
         await relaunch();
     }
 
+    async function checkForUpdate() {
+        const update = await check();
+        if (update) {
+            foundUpdate = update;
+            notifyUpdate();
+        }
+    }
+
     let foundUpdate: Update | null = null;
     let updateInterval: NodeJS.Timeout;
 
     onMount(() => {
-        updateInterval = setInterval(
-            async () => {
-                const update = await check();
-                if (update) {
-                    foundUpdate = update;
-                    notifyUpdate();
-                }
-            },
-            1000 * 60 * 5,
-        );
+        updateInterval = setInterval(checkForUpdate, 1000 * 60 * 5);
+        checkForUpdate();
     });
 
     onDestroy(() => {
