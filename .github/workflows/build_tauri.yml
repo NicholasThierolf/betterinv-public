@@ -226,81 +226,120 @@ jobs:
         with:
           path: dist-artifacts
 
-      - name: Generate latest.json (from bundles + .sig)
+      - name: Upload updater artifacts to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.check_version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          echo "== Debug: listing downloaded artifacts =="
+          find dist-artifacts -type f | sed 's/^/ - /'
+
+          # Collect ONLY updater artifacts + signatures (Tauri v2)
+          # Windows: *.msi.zip, *nsis.zip (+ .sig)
+          # macOS: *.app.tar.gz (+ .sig)
+          # Linux: *.AppImage.tar.gz (+ .sig)
+          mapfile -t FILES < <(
+            find dist-artifacts -type f \( \
+              -name "*.msi.zip" -o -name "*nsis.zip" -o \
+              -name "*.app.tar.gz" -o \
+              -name "*.AppImage.tar.gz" -o \
+              -name "*.msi.zip.sig" -o -name "*nsis.zip.sig" -o \
+              -name "*.app.tar.gz.sig" -o \
+              -name "*.AppImage.tar.gz.sig" \
+            \) | sort
+          )
+
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "ERROR: No updater artifacts found."
+            echo "Did you set bundle.createUpdaterArtifacts=true in tauri.conf.json?"
+            exit 1
+          fi
+
+          echo "Uploading updater artifacts to release $TAG:"
+          printf ' - %s\n' "${FILES[@]}"
+
+          # Upload everything (idempotent)
+          gh release upload "$TAG" "${FILES[@]}" --clobber
+
+      - name: Generate latest.json (Tauri v2 updater format)
         env:
           TAG: ${{ needs.check_version.outputs.tag }}
         run: |
           set -euo pipefail
 
           VERSION="$(jq -r '.version // .package.version' tauri/src-tauri/tauri.conf.json)"
-          [ -n "$VERSION" ] && [ "$VERSION" != "null" ]
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "ERROR: Could not read version from tauri config"
+            exit 1
+          fi
 
           REPO="$GITHUB_REPOSITORY"
           BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
           PUB_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-          # Helpers
-          pick_asset() {
+          # pick first matching updater artifact that HAS a .sig next to it
+          pick_pair() {
             local pattern="$1"
-            # pick the first match (stable enough since artifact names are separated by OS/target)
-            find dist-artifacts -type f -name "$pattern" | head -n 1 || true
+            local f
+            f="$(find dist-artifacts -type f -name "$pattern" | sort | head -n 1 || true)"
+            if [ -z "$f" ]; then
+              echo ""
+              return 0
+            fi
+            if [ ! -f "${f}.sig" ]; then
+              echo "ERROR: Found $f but missing ${f}.sig"
+              exit 1
+            fi
+            echo "$f"
           }
 
-          # ---- Windows: prefer .msi then .exe (both are valid for updater)
-          WIN_FILE="$(pick_asset '*.msi')"
-          if [ -z "$WIN_FILE" ]; then WIN_FILE="$(pick_asset '*setup*.exe')"; fi
-          if [ -z "$WIN_FILE" ]; then WIN_FILE="$(pick_asset '*.exe')"; fi
-          WIN_SIG=""
-          if [ -n "$WIN_FILE" ]; then
-            WIN_SIG_FILE="${WIN_FILE}.sig"
-            if [ ! -f "$WIN_SIG_FILE" ]; then
-              # sometimes sig can be in same dir but not ".sig" suffix on full path edge-cases
-              WIN_SIG_FILE="$(dirname "$WIN_FILE")/$(basename "$WIN_FILE").sig"
-            fi
-            WIN_SIG="$(cat "$WIN_SIG_FILE" | tr -d '\r\n')"
-          fi
+          # Windows: prefer MSI updater zip; fallback to NSIS updater zip
+          WIN_FILE="$(pick_pair '*.msi.zip')"
+          if [ -z "$WIN_FILE" ]; then WIN_FILE="$(pick_pair '*nsis.zip')"; fi
 
-          # ---- Linux: AppImage
-          LINUX_FILE="$(pick_asset '*.AppImage')"
-          LINUX_SIG=""
-          if [ -n "$LINUX_FILE" ]; then
-            LINUX_SIG_FILE="${LINUX_FILE}.sig"
-            LINUX_SIG="$(cat "$LINUX_SIG_FILE" | tr -d '\r\n')"
-          fi
+          # Linux: AppImage updater tar.gz
+          LINUX_FILE="$(pick_pair '*.AppImage.tar.gz')"
 
-          # ---- macOS: updater usually uses .app.tar.gz (preferred), fallback .dmg
-          MAC_FILE="$(pick_asset '*.app.tar.gz')"
-          if [ -z "$MAC_FILE" ]; then MAC_FILE="$(pick_asset '*.dmg')"; fi
-          MAC_SIG=""
-          if [ -n "$MAC_FILE" ]; then
-            MAC_SIG_FILE="${MAC_FILE}.sig"
-            MAC_SIG="$(cat "$MAC_SIG_FILE" | tr -d '\r\n')"
-          fi
+          # macOS: app tar.gz
+          MAC_FILE="$(pick_pair '*.app.tar.gz')"
 
-          # Validate we found at least one platform (you can make this stricter if you want)
+          # At least one platform must exist
           if [ -z "$WIN_FILE" ] && [ -z "$LINUX_FILE" ] && [ -z "$MAC_FILE" ]; then
-            echo "ERROR: Could not find any updater-compatible bundles in dist-artifacts."
-            echo "Debug listing:"
-            find dist-artifacts -type f | sed 's/^/ - /'
+            echo "ERROR: No platform updater artifacts found."
             exit 1
           fi
 
-          # Build JSON with jq
+          WIN_SIG=""; LINUX_SIG=""; MAC_SIG=""
+          if [ -n "$WIN_FILE" ]; then WIN_SIG="$(tr -d '\r\n' < "${WIN_FILE}.sig")"; fi
+          if [ -n "$LINUX_FILE" ]; then LINUX_SIG="$(tr -d '\r\n' < "${LINUX_FILE}.sig")"; fi
+          if [ -n "$MAC_FILE" ]; then MAC_SIG="$(tr -d '\r\n' < "${MAC_FILE}.sig")"; fi
+
+          WIN_NAME="$(basename "${WIN_FILE:-}")"
+          LINUX_NAME="$(basename "${LINUX_FILE:-}")"
+          MAC_NAME="$(basename "${MAC_FILE:-}")"
+
+          echo "Using updater artifacts:"
+          echo " - Windows: ${WIN_NAME:-<none>}"
+          echo " - Linux:   ${LINUX_NAME:-<none>}"
+          echo " - macOS:   ${MAC_NAME:-<none>}"
+
           jq -n \
             --arg version "$VERSION" \
             --arg notes "See the GitHub release notes." \
             --arg pub_date "$PUB_DATE" \
             --arg base "$BASE_URL" \
-            --arg win_file "$(basename "${WIN_FILE:-}")" \
-            --arg win_sig "${WIN_SIG:-}" \
-            --arg linux_file "$(basename "${LINUX_FILE:-}")" \
-            --arg linux_sig "${LINUX_SIG:-}" \
-            --arg mac_file "$(basename "${MAC_FILE:-}")" \
-            --arg mac_sig "${MAC_SIG:-}" \
+            --arg win_file "$WIN_NAME" \
+            --arg win_sig "$WIN_SIG" \
+            --arg linux_file "$LINUX_NAME" \
+            --arg linux_sig "$LINUX_SIG" \
+            --arg mac_file "$MAC_NAME" \
+            --arg mac_sig "$MAC_SIG" \
             '
             def add_platform(obj; key; file; sig):
               if (file|length) > 0 and (sig|length) > 0
-              then obj + { (key): { "url": ($base + "/" + file), "signature": sig } }
+              then obj + { (key): { url: ($base + "/" + file), signature: sig } }
               else obj
               end;
 
