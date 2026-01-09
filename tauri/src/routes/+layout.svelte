@@ -3,6 +3,7 @@
     import { ModeWatcher } from "mode-watcher";
     import * as Tooltip from "$lib/components/ui/tooltip/index.js";
     import { ConfirmDeleteDialog, ItemPopover } from "@betterinv/lib";
+    import Updater from "$lib/components/Updater.svelte";
 
     let { children } = $props();
 </script>
@@ -15,5 +16,6 @@
 <Tooltip.Provider>
     {@render children?.()}
 </Tooltip.Provider>
+<Updater />
 <ItemPopover />
 <ConfirmDeleteDialog />
