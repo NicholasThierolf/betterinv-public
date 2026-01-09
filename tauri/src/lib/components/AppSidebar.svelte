@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { getVersion } from "@tauri-apps/api/app";
     import ChartLine from "@lucide/svelte/icons/chart-line";
     import Rows3Icon from "@lucide/svelte/icons/rows-3";
     import Newspaper from "@lucide/svelte/icons/newspaper";
@@ -9,18 +10,16 @@
     import { Badge } from "./ui/badge";
     import Plus from "@lucide/svelte/icons/plus";
     import CirclePlus from "@lucide/svelte/icons/circle-plus";
-    import SettingsIcon from "@lucide/svelte/icons/settings";
     import * as Sidebar from "$lib/components/ui/sidebar/index.js";
     import ScanEye from "@lucide/svelte/icons/scan-eye";
     import { communicator } from "$lib/communicator";
-    import { onMount } from "svelte";
     import { AppLogo, SettingsDialog } from "@betterinv/lib";
     import { LightSwitch } from "./ui/light-switch";
-    import { ClientMessageType } from "$lib/types";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import ProfilePicture from "./ProfilePicture.svelte";
     import { accountState } from "$lib/accountManager.svelte";
+    import { onMount } from "svelte";
 
     const portfolioLinks = [
         {
@@ -62,6 +61,12 @@
     ];
 
     let settingsOpen = $state(false);
+
+    let version = $state("…");
+
+    onMount(async () => {
+        version = await getVersion();
+    });
 </script>
 
 <Sidebar.Root variant="inset">
@@ -200,6 +205,9 @@
         </Sidebar.Menu>
         <div class="flex gap-4 flex-wrap items-center">
             <LightSwitch /><a href="/imprint">Imprint</a><a href="/tos">ToS</a>
+        </div>
+        <div class="pl-2 text-xs my-2">
+            v{version}
         </div>
     </Sidebar.Footer>
 </Sidebar.Root>
