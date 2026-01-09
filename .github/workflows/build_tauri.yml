@@ -212,3 +212,118 @@ jobs:
             tauri/src-tauri/target/release/bundle/**
             tauri/src-tauri/target/${{ matrix.targetTriple }}/release/bundle/**
           if-no-files-found: warn
+  latest_json:
+    needs: [check_version, build]
+    if: ${{ github.repository == 'NicholasThierolf/betterinv-public' && needs.check_version.outputs.should_release == 'true' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts (bundles)
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
+
+      - name: Generate latest.json (from bundles + .sig)
+        env:
+          TAG: ${{ needs.check_version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          VERSION="$(jq -r '.version // .package.version' tauri/src-tauri/tauri.conf.json)"
+          [ -n "$VERSION" ] && [ "$VERSION" != "null" ]
+
+          REPO="$GITHUB_REPOSITORY"
+          BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
+          PUB_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          # Helpers
+          pick_asset() {
+            local pattern="$1"
+            # pick the first match (stable enough since artifact names are separated by OS/target)
+            find dist-artifacts -type f -name "$pattern" | head -n 1 || true
+          }
+
+          # ---- Windows: prefer .msi then .exe (both are valid for updater)
+          WIN_FILE="$(pick_asset '*.msi')"
+          if [ -z "$WIN_FILE" ]; then WIN_FILE="$(pick_asset '*setup*.exe')"; fi
+          if [ -z "$WIN_FILE" ]; then WIN_FILE="$(pick_asset '*.exe')"; fi
+          WIN_SIG=""
+          if [ -n "$WIN_FILE" ]; then
+            WIN_SIG_FILE="${WIN_FILE}.sig"
+            if [ ! -f "$WIN_SIG_FILE" ]; then
+              # sometimes sig can be in same dir but not ".sig" suffix on full path edge-cases
+              WIN_SIG_FILE="$(dirname "$WIN_FILE")/$(basename "$WIN_FILE").sig"
+            fi
+            WIN_SIG="$(cat "$WIN_SIG_FILE" | tr -d '\r\n')"
+          fi
+
+          # ---- Linux: AppImage
+          LINUX_FILE="$(pick_asset '*.AppImage')"
+          LINUX_SIG=""
+          if [ -n "$LINUX_FILE" ]; then
+            LINUX_SIG_FILE="${LINUX_FILE}.sig"
+            LINUX_SIG="$(cat "$LINUX_SIG_FILE" | tr -d '\r\n')"
+          fi
+
+          # ---- macOS: updater usually uses .app.tar.gz (preferred), fallback .dmg
+          MAC_FILE="$(pick_asset '*.app.tar.gz')"
+          if [ -z "$MAC_FILE" ]; then MAC_FILE="$(pick_asset '*.dmg')"; fi
+          MAC_SIG=""
+          if [ -n "$MAC_FILE" ]; then
+            MAC_SIG_FILE="${MAC_FILE}.sig"
+            MAC_SIG="$(cat "$MAC_SIG_FILE" | tr -d '\r\n')"
+          fi
+
+          # Validate we found at least one platform (you can make this stricter if you want)
+          if [ -z "$WIN_FILE" ] && [ -z "$LINUX_FILE" ] && [ -z "$MAC_FILE" ]; then
+            echo "ERROR: Could not find any updater-compatible bundles in dist-artifacts."
+            echo "Debug listing:"
+            find dist-artifacts -type f | sed 's/^/ - /'
+            exit 1
+          fi
+
+          # Build JSON with jq
+          jq -n \
+            --arg version "$VERSION" \
+            --arg notes "See the GitHub release notes." \
+            --arg pub_date "$PUB_DATE" \
+            --arg base "$BASE_URL" \
+            --arg win_file "$(basename "${WIN_FILE:-}")" \
+            --arg win_sig "${WIN_SIG:-}" \
+            --arg linux_file "$(basename "${LINUX_FILE:-}")" \
+            --arg linux_sig "${LINUX_SIG:-}" \
+            --arg mac_file "$(basename "${MAC_FILE:-}")" \
+            --arg mac_sig "${MAC_SIG:-}" \
+            '
+            def add_platform(obj; key; file; sig):
+              if (file|length) > 0 and (sig|length) > 0
+              then obj + { (key): { "url": ($base + "/" + file), "signature": sig } }
+              else obj
+              end;
+
+            {
+              version: $version,
+              notes: $notes,
+              pub_date: $pub_date,
+              platforms: (
+                {}
+                | add_platform(.; "windows-x86_64"; $win_file; $win_sig)
+                | add_platform(.; "linux-x86_64";   $linux_file; $linux_sig)
+                | add_platform(.; "darwin-aarch64"; $mac_file; $mac_sig)
+              )
+            }
+            ' > latest.json
+
+          echo "Generated latest.json:"
+          cat latest.json
+
+      - name: Upload latest.json to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.check_version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" latest.json --clobber
