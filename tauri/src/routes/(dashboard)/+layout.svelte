@@ -14,6 +14,10 @@
 <Sidebar.Provider>
   <AppSidebar />
   <Sidebar.Inset class="w-full p-4 box-border">
+    <Sidebar.Trigger
+      class="sticky -ml-4 top-4 mb-2 z-50 size-10 md:hidden"
+      variant="secondary"
+    ></Sidebar.Trigger>
     {@render children?.()}
   </Sidebar.Inset>
 </Sidebar.Provider>

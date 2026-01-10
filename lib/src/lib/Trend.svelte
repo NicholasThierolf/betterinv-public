@@ -31,7 +31,7 @@
     }
 </script>
 
-<Card.Root class={`pl-5 pr-1 gap-0 w-150 ${className}`}>
+<Card.Root class={`pl-5 pr-1 gap-0 w-150 max-[1280px]:w-full ${className}`}>
     <Card.Header>
         <Card.Title>{title}</Card.Title>
         <Card.Action class="flex items-center"

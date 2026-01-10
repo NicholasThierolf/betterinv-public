@@ -24,25 +24,31 @@
 </script>
 
 {#await data.dashboard}
-    <section class="gap-5 w-full max-w-[1500px] mx-auto">
-        <div class="flex justify-between big-stats w-full">
-            <Skeleton class="w-80 h-50 rounded-xl" />
-            <Skeleton class="w-80 h-50 rounded-xl" />
-            <Skeleton class="w-80 h-50 rounded-xl" />
-            <Skeleton class="w-80 h-50 rounded-xl" />
-            <Skeleton class="w-80 h-50 rounded-xl" />
+    <section class="gap-5 w-full max-w-[1500px] mx-auto min-w-0">
+        <div class="flex justify-evenly big-stats flex-wrap gap-5">
+            <Skeleton class="w-80 h-50 shrink-0 rounded-xl" />
+            <Skeleton class="w-80 h-50 shrink-0 rounded-xl" />
+            <Skeleton class="w-80 h-50 shrink-0 rounded-xl" />
+            <Skeleton class="w-80 h-50 shrink-0 rounded-xl" />
+            <Skeleton class="w-80 h-50 shrink-0 rounded-xl" />
         </div>
         <Skeleton class="total-chart w-full h-150 rounded-xl" />
         <Skeleton class="amount-chart w-full h-150 rounded-xl" />
-        <div class="performers w-full flex justify-between">
-            <Skeleton class="total-chart w-150 h-150 rounded-xl" />
-            <Skeleton class="total-chart w-150 h-150 rounded-xl" />
-            <Skeleton class="total-chart w-150 h-150 rounded-xl" />
+        <div class="performers w-full flex justify-between flex-wrap gap-5">
+            <Skeleton
+                class="total-chart w-150 h-150 rounded-xl max-[1280px]:w-full"
+            />
+            <Skeleton
+                class="total-chart w-150 h-150 rounded-xl max-[1280px]:w-full"
+            />
+            <Skeleton
+                class="total-chart w-150 h-150 rounded-xl max-[1280px]:w-full"
+            />
         </div>
     </section>
 {:then dashboard}
-    <section class="gap-5 w-full max-w-[1500px] mx-auto">
-        <div class="flex justify-between big-stats w-full">
+    <section class="gap-5 w-full max-w-[1500px] mx-auto min-w-0">
+        <div class="flex justify-evenly big-stats w-full flex-wrap gap-5">
             <LargeStat
                 title="Everything"
                 description="Your whole inventory"
@@ -81,7 +87,7 @@
         </div>
         <TotalChart class="total-chart" data={dashboard} />
         <AmountChart class="amount-chart" data={dashboard.allItems} />
-        <div class="performers w-full flex justify-between">
+        <div class="performers w-full flex justify-between flex-wrap gap-5">
             <Trend
                 title="Best performers"
                 items={dashboard.allItems
@@ -149,7 +155,7 @@
 <style>
     section {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         grid-template-rows: auto auto auto;
         grid-template-areas:
             "big-stats big-stats big-stats big-stats"
@@ -167,5 +173,16 @@
     }
     .performers {
         grid-area: performers;
+    }
+
+    @media screen and (max-width: 1600px) {
+        section {
+            grid-template-rows: auto auto auto auto;
+            grid-template-areas:
+                "performance-chart performance-chart performance-chart performance-chart"
+                "top-20 top-20 top-20 top-20"
+                "big-stats big-stats big-stats big-stats"
+                "performers performers performers performers";
+        }
     }
 </style>
