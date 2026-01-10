@@ -2,7 +2,6 @@
     import * as Dialog from "../components/ui/dialog/index.ts";
     import * as ToggleGroup from "../components/ui/toggle-group/index.ts";
     import SingleItemChart from "../SingleItemChart.svelte";
-    import type { DatedPriceHistory, MinimalItem } from "../types.ts";
     import SteamIcon from "../icons/steam.png";
     import FloatIcon from "../icons/csfloat.png";
     import { Button } from "../components/ui/button/index.ts";
@@ -12,7 +11,7 @@
 </script>
 
 <Dialog.Root bind:open={itemPopover.isOpen}>
-    <Dialog.Content class="min-w-[90%] min-h-[90%] p-15">
+    <Dialog.Content class="min-w-[90%] min-h-[90%] p-15 max-h-[90%]">
         <Dialog.Header>
             <Dialog.Title class="flex justify-between">
                 <span>{itemPopover.popupShowing?.marketHashName}</span>
@@ -39,12 +38,16 @@
                 alt={itemPopover.popupShowing?.marketHashName}
             />
         </Dialog.Header>
-        <Dialog.Description>
+        <Dialog.Description class="overflow-y-auto">
             {#key itemPopover.popupShowing?.marketHashName}
-                <SingleItemChart
-                    {days}
-                    itemDataPromise={itemPopover.itemDataPromise}
-                />
+                {#if itemPopover.itemDataPromise}
+                    <div class="w-full h-[500px] max-h-[70%]">
+                        <SingleItemChart
+                            {days}
+                            itemDataPromise={itemPopover.itemDataPromise}
+                        />
+                    </div>
+                {/if}
             {/key}
             <div class="flex justify-between mt-5">
                 <div class="flex flex-col gap-2">

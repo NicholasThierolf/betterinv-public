@@ -1,4 +1,4 @@
-export type EventName = "inventory-data" | "account-data" | "request-qr-code-usage" | "qr-code-login-error" | "qr-code-login-success" | "qr-code-changed";
+export type EventName = "inventory-data" | "account-data" | "request-qr-code-usage" | "qr-code-login-error" | "qr-code-login-success" | "qr-code-changed" | "browser-login-received" | "sync-data" | "log";
 export interface NodeToSvelte {
     id?: string;
     type: 'response' | 'event';
@@ -6,7 +6,7 @@ export interface NodeToSvelte {
     data: any;
     error?: string;
 }
-export type RequestName = "add-account" | "stop-adding-account" | "login-account" | "sync-inventory" | "open-link" | "logout" | "sync-data" | "is-logged-in" | "get-accounts" | "get-price-history" | "send-to-container" | "remove-from-container" | "fetch-from-server" | "log-in" | "get-profile-picture";
+export type RequestName = "add-account" | "stop-adding-account" | "login-account" | "sync-inventory" | "logout" | "sync-data" | "is-logged-in" | "get-accounts" | "get-price-history" | "send-to-container" | "remove-from-container" | "fetch-from-server" | "log-in" | "get-profile-picture" | "handle-deep-link" | "send-stored-logs";
 export declare enum AccountError {
     SteamIDMissmatch = 0
 }
@@ -40,6 +40,10 @@ export interface InventoryData {
     inventory: Item[];
     containers: Record<string, Item[]>;
     mainInventoryItemCount: number;
+    containersLoaded: {
+        total: number;
+        loaded: number;
+    };
 }
 export type CSGOItem = {
     id: string;

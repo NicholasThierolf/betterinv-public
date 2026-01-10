@@ -1,5 +1,5 @@
 import { communicator } from "./communicator";
-import { ClientMessageType, MessageType, type InventoryData, type message } from "./types";
+import type { InventoryData } from "@betterinv/types";
 
 class InventoryManager {
     data: Record<string, InventoryData> = $state({});

@@ -357,6 +357,11 @@ export function enrichItems(inventory: CSGOItem[], steamID: string, containerID:
     return minifyInv(enrichedInv);
 }
 
+function onlyUnique<T>(value: T, index: number, array: T[]) {
+    return array.indexOf(value) === index;
+}
+
+
 export function minifyInv(inventory: Item[]) {
     const minifiedInv: Item[] = [];
     inventory.forEach((item: Item) => {
@@ -367,14 +372,14 @@ export function minifyInv(inventory: Item[]) {
                 return;
             }
             if (presentItem?.amount === undefined) {
-                presentItem.amount = 2;
                 presentItem.ids.push(...item.ids);
+                presentItem.ids = presentItem.ids.filter(onlyUnique<string>);
+                presentItem.amount = presentItem.ids.length;
             }
             else {
-                if (item.amount) {
-                    presentItem.amount += item.amount;
-                } else presentItem.amount++;
                 presentItem.ids.push(...item.ids);
+                presentItem.ids = presentItem.ids.filter(onlyUnique<string>);
+                presentItem.amount = presentItem.ids.length;
             }
         } else minifiedInv.push(item);
     });

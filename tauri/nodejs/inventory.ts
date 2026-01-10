@@ -1,9 +1,15 @@
-import { InventoryData, Item } from "@betterinv/types";
+import { InventoryData, Item, ItemType } from "@betterinv/types";
 import { communicator } from "./communicator.ts";
 import { itemStackAmount, minifyInv, minifyItemsForExport } from "./enrichItems.ts";
 import { fetchFromAPI } from "./fetchFromAPI.ts";
 
-
+function count(inv: Item[]) {
+    let amount = 0;
+    inv.forEach((item: Item) => {
+        amount += item.amount ?? 1;
+    });
+    return amount;
+}
 
 export class Inventory {
     private static allInventories: Record<string, Inventory> = {};
@@ -31,9 +37,9 @@ export class Inventory {
     sync() {
         Inventory.sync();
         if (!this.loaded) return;
-        const allItems = [...this.mainInventory];
+        const allItems = JSON.parse(JSON.stringify(this.mainInventory));
         Object.values(this.containers).forEach((items: Item[]) => {
-            allItems.push(...items);
+            allItems.push(...JSON.parse(JSON.stringify(items)));
         })
         const minifiedInv = minifyItemsForExport(minifyInv(allItems));
         fetchFromAPI("/api/inventory", { method: "post", body: JSON.stringify({ inventory: minifiedInv, steamID: this.steamID }) })
@@ -44,7 +50,8 @@ export class Inventory {
             loaded: this._loaded,
             inventory: this.mainInventory,
             containers: this.containers,
-            mainInventoryItemCount: itemStackAmount(this.mainInventory)
+            containersLoaded: this.containerLoadStatus,
+            mainInventoryItemCount: itemStackAmount(this.mainInventory),
         }
     }
 
@@ -76,7 +83,7 @@ export class Inventory {
     }
 
     loadedInventory(items: Item[]) {
-        this.mainInventory = items;
+        this.mainInventory = minifyInv(items);
         this.sync();
     }
 
@@ -88,5 +95,18 @@ export class Inventory {
             }
         });
         this.sync();
+    }
+
+    get containerLoadStatus() {
+        const containers = this.mainInventory.filter((item: Item) => {
+            return item.type === ItemType.Container
+        });
+
+        const loadedAmount = Object.keys(this.containers);
+
+        return {
+            total: containers.length,
+            loaded: loadedAmount.length,
+        }
     }
 }

@@ -78,6 +78,10 @@ export interface InventoryData {
     inventory: Item[],
     containers: Record<string, Item[]>,
     mainInventoryItemCount: number,
+    containersLoaded: {
+        total: number,
+        loaded: number,
+    }
 }
 
 export type CSGOItem = {

@@ -1,9 +1,9 @@
 <script lang="ts">
+    import ArrowLeft from "@lucide/svelte/icons/move-left";
     import InventoryWrapper from "$lib/components/InventoryWrapper.svelte";
     import ItemCard from "$lib/components/ItemCard.svelte";
     import PlaceholderCard from "$lib/components/PlaceholderCard.svelte";
     import { inventoryManager } from "$lib/inventoryManager.svelte";
-    import { ClientMessageType } from "$lib/types";
     import type { PageProps } from "./$types";
     import ItemTransfer from "$lib/components/ItemTransfer.svelte";
 
@@ -12,7 +12,9 @@
     let itemTransfer: ItemTransfer | null = $state(null);
 </script>
 
-<a href={`#/account/${data.steamID}`}>Back</a>
+<a href={`#/account/${data.steamID}`} class="flex items-center gap-2"
+    ><ArrowLeft />Back</a
+>
 <InventoryWrapper>
     {#if inventoryManager.data?.[data.steamID]?.loaded}
         {#each inventoryManager.data?.[data.steamID].containers[data.containerID] as item (item.ids[0])}

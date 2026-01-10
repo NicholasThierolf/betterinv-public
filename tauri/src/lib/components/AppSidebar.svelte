@@ -120,7 +120,12 @@
                 <Sidebar.Menu>
                     {#each accountState.accounts as account (account.name)}
                         <Sidebar.MenuItem>
-                            <Sidebar.MenuButton size="lg">
+                            <Sidebar.MenuButton
+                                size="lg"
+                                isActive={page.url.hash.includes(
+                                    `#/account/${account.steamID}`,
+                                )}
+                            >
                                 {#snippet child({ props })}
                                     {#if account.loginExpired}
                                         <a

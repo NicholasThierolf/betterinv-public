@@ -198,7 +198,6 @@ export class Account {
 
         this.on("inventory", () => {
             this._inventory = new Inventory(`${this.accountInfo?.steamID}`);
-
             this.emit("changedData");
 
             const enrichedInv = enrichItems(this._csgo.inventory, this.steamID);
@@ -212,7 +211,6 @@ export class Account {
                     this._inventory?.itemRemoved(item.id);
                 });
                 this._csgo.on("itemAcquired", (item: CSGOItem) => {
-                    log("item acqired");
                     if (item.casket_id !== undefined) return;
                     log("no casket id")
                     this._inventory?.itemsAdded(enrichItems([item], this.steamID));

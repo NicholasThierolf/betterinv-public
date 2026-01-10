@@ -79,6 +79,7 @@
                 x={type === "item-count" ? "amount" : "value"}
                 orientation="horizontal"
                 props={{
+                    bars: { class: "fill-primary" },
                     yAxis: {
                         format: (d: string) => truncateLabel(d, 16),
                     },

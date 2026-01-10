@@ -5,7 +5,7 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import { Spinner } from "$lib/components/ui/spinner/index.js";
     import { inventoryManager } from "$lib/inventoryManager.svelte";
-    import { ClientMessageType, ItemType, type Item } from "$lib/types";
+    import { ItemType, type Item } from "$lib/types";
     import { communicator } from "$lib/communicator";
 
     const {
@@ -117,7 +117,7 @@
     }
 </script>
 
-<Dialog.Root open={dialogOpen}>
+<Dialog.Root bind:open={dialogOpen}>
     <Dialog.Content>
         <Dialog.Header>
             <Dialog.Title>Moving Item</Dialog.Title>
@@ -135,7 +135,9 @@
             </Dialog.Description>
         </Dialog.Header>
         {#if dialogState === DialogStates.SelectingContainer}
-            <div class="w-full h-[50vh] flex flex-wrap overflow-auto gap-2">
+            <div
+                class="w-full h-[50vh] flex flex-wrap overflow-auto gap-2 pr-2"
+            >
                 {#if inventoryManager.data?.[steamID]?.loaded}
                     {#each containers as container (container.ids[0])}
                         <ContainerSelectItem
