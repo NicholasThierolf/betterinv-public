@@ -188,7 +188,7 @@ jobs:
           Copy-Item $nodeExe.FullName $dest -Force
 
       - name: Build + Release Tauri app
-        uses: tauri-apps/tauri-action@v0.6.1
+        uses: tauri-apps/tauri-action@action-v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PUBLIC_SERVER_URL: ${{ env.PUBLIC_SERVER_URL }}
@@ -203,7 +203,7 @@ jobs:
           releaseDraft: false
           prerelease: false
           generateReleaseNotes: true
-          includeUpdaterJson: false
+          uploadUpdaterJson: false
 
       - name: Upload bundles (workflow artifacts)
         uses: actions/upload-artifact@v4
@@ -226,6 +226,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist-artifacts
+          merge-multiple: true
 
       - name: Upload updater artifacts to GitHub Release
         env:
