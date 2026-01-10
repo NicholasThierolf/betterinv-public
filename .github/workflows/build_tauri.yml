@@ -203,6 +203,7 @@ jobs:
           releaseDraft: false
           prerelease: false
           generateReleaseNotes: true
+          includeUpdaterJson: false
 
       - name: Upload bundles (workflow artifacts)
         uses: actions/upload-artifact@v4
