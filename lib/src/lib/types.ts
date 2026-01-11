@@ -45,5 +45,3 @@ export type DatedPriceHistory = {
 export type UserPreferences = {
     currency: Currency,
 }
-
-export type Currency = "EUR" | "USD" | "CAD";

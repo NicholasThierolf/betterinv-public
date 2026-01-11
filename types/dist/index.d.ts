@@ -62,3 +62,35 @@ export type CSGOItem = {
     flags: number;
     position: number;
 };
+export type Currency = "EUR" | "USD" | "JPY" | "CZK" | "DKK" | "GBP" | "HUF" | "PLN" | "RON" | "SEK" | "CHF" | "ISK" | "NOK" | "TRY" | "AUD" | "BRL" | "CAD" | "CNY" | "HKD" | "IDR" | "ILS" | "INR" | "KRW" | "MXN" | "MYR" | "NZD" | "PHP" | "SGD" | "THB" | "ZAR";
+export type DayRates = [
+    USD: number,
+    JPY: number,
+    CZK: number,
+    DKK: number,
+    GBP: number,
+    HUF: number,
+    PLN: number,
+    RON: number,
+    SEK: number,
+    CHF: number,
+    ISK: number,
+    NOK: number,
+    TRY: number,
+    AUD: number,
+    BRL: number,
+    CAD: number,
+    CNY: number,
+    HKD: number,
+    IDR: number,
+    ILS: number,
+    INR: number,
+    KRW: number,
+    MXN: number,
+    MYR: number,
+    NZD: number,
+    PHP: number,
+    SGD: number,
+    THB: number,
+    ZAR: number
+];

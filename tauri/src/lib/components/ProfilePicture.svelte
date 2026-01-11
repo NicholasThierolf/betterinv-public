@@ -17,7 +17,7 @@
 </script>
 
 {#await url}
-    <Skeleton class="w-6 h-6 rounded-md" />
+    <Skeleton class="w-6 h-6 rounded-full" />
 {:then imgUrl}
-    <img class="w-6 h-6 rounded-md" src={imgUrl} alt="" />
+    <img class="w-6 h-6 rounded-full" src={imgUrl} alt="" />
 {/await}

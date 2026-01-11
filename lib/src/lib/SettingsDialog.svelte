@@ -234,12 +234,14 @@
                         }}
                     >
                         <Select.Trigger class="w-[180px]"
-                            >{currencyManager.currency}</Select.Trigger
+                            >{currencyManager.currencies.find((cur) => {
+                                return cur.value === currencyManager.currency;
+                            })?.label}</Select.Trigger
                         >
                         <Select.Content>
                             {#each currencyManager.currencies as currency}
-                                <Select.Item value={currency}
-                                    >{currency}</Select.Item
+                                <Select.Item value={currency.value}
+                                    >{currency.label}</Select.Item
                                 >
                             {/each}
                         </Select.Content>
