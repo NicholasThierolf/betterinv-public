@@ -55,7 +55,7 @@
     });
 </script>
 
-<Card.Root class={`pl-5 pr-1 gap-0 ${className}`}>
+<Card.Root class={`pl-7 pr-1 gap-0 ${className}`}>
     <Card.Header>
         <Card.Title>Last {days} days</Card.Title>
         <Card.Action class="flex items-center">

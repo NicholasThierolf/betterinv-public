@@ -95,7 +95,7 @@
     {#if data}
         <Chart.Container
             config={chartConfig}
-            class="h-full max-h-[500px] w-full"
+            class="h-full max-h-[500px] w-full pl-14"
         >
             <AreaChart
                 {data}
@@ -107,7 +107,7 @@
                         ticks: isLongRange ? () => ticks : null,
                         format: isLongRange ? formatYear : formatDayFull, // long: just year; short: full date
                     },
-                    yAxis: { format: currencyManager.currencyFormaterWithKs },
+                    yAxis: { format: currencyManager.currencyFormater },
                 }}
             >
                 {#snippet marks()}

@@ -37,6 +37,12 @@ class CurrencyManager {
             maximumFractionDigits: 1,
         });
 
+        const largeNumberFormatterWithoutFraction = new Intl.NumberFormat('de-DE', {
+            style: 'currency',
+            currency: this.currency,
+            maximumFractionDigits: 0,
+        });
+
 
 
         return (valueInEur: number, writeWithKs: boolean = false) => {
@@ -48,11 +54,19 @@ class CurrencyManager {
 
             let formated: string;
             let symbol = "K";
-            if (converted < 1_000_000)
-                formated = largeNumberFormatter.format(converted / 1_000);
+            if (converted < 1_000_000) {
+                if (converted < 10_000)
+                    formated = largeNumberFormatter.format(converted / 1_000);
+                else
+                    formated = largeNumberFormatterWithoutFraction.format(converted / 1_000);
+            }
             else {
-                formated = largeNumberFormatter.format(converted / 1_000_000);
                 symbol = "M"
+                if (converted < 10_000_000)
+                    formated = largeNumberFormatter.format(converted / 1_000_000);
+                else
+                    formated = largeNumberFormatterWithoutFraction.format(converted / 1_000_000);
+
             }
             const match = formated.match(/\d+(?!.*\d)/);
             if (!match) return formated + symbol;

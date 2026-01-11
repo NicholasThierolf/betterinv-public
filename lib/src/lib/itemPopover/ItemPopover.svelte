@@ -41,7 +41,7 @@
         <Dialog.Description class="overflow-y-auto">
             {#key itemPopover.popupShowing?.marketHashName}
                 {#if itemPopover.itemDataPromise}
-                    <div class="w-full h-[500px] max-h-[70%]">
+                    <div class="w-full h-[500px] max-h-[70%] py-2">
                         <SingleItemChart
                             {days}
                             itemDataPromise={itemPopover.itemDataPromise}
