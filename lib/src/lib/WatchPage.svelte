@@ -142,7 +142,7 @@
         {:then}
             <Command.Input
                 bind:value={val}
-                placeholder="Type a command or search..."
+                placeholder="Search for an item..."
             />
             <Command.List>
                 {#each shownItems as item}
